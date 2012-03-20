@@ -5,5 +5,5 @@
   {registered, []},
   {build_dependencies, []},
   {env, []},
-  {applications, [kernel, stdlib, sasl, cowboy]},
+  {applications, [kernel, stdlib, sasl]},
   {mod, {error_log_tool_app, []}}]}.
