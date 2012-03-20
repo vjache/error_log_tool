@@ -1,0 +1,9 @@
+%% -*- mode: erlang; -*-
+{application, error_log_tool,
+ [{description, "An Error Log Tool"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {build_dependencies, []},
+  {env, []},
+  {applications, [kernel, stdlib, sasl, cowboy]},
+  {mod, {error_log_tool_app, []}}]}.

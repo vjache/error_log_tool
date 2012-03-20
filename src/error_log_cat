@@ -1,0 +1,26 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+%%! -smp enable -env ERL_LIBS ../deps -pa ../ebin -config ../dev.config
+
+main(["--server"]) ->
+	ok=error_log_tool_app:start(),
+	receive stop -> ok end;
+main([_|_]=Args) ->
+    [LogFilename|Options]=lists:reverse(Args),
+    try error_log_tool:cat([ list_to_atom(Opt) || [$-,$-|Opt] <- Options],LogFilename)
+    catch
+        _:Reason ->
+            io:format(standard_error,"error: ~p~n",[Reason]),
+            halt(1)
+    end;
+main(_) ->
+    usage().
+
+usage() ->
+    io:format(standard_error,"usage: error_log_cat OPTIONS LogFilename~n~n",[]),
+    io:format(standard_error,"OPTIONS~n",[]),
+    io:format(standard_error,"\t--sasl          - only sasl reports~n",[]),
+    io:format(standard_error,"\t--sasl-error    - only sasl error reports~n",[]),
+    io:format(standard_error,"\t--error         - all standard or sasl error reports~n",[]),
+    io:format(standard_error,"\t--warn          - all standard or sasl error or warning reports~n",[]),
+    halt(1).
