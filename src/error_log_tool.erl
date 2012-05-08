@@ -97,8 +97,8 @@ filter([Opt|Tail]=_Options,LogZList) ->
                 end, LogZList);
         {node, Node} ->
             Z=zlists:filter(
-                fun({_N,{_, {_, Node1, {_, _, _}} }})->
-                        Node1 == Node;
+                fun({_N,{_, {_, Pid, {_, _, _}} }})->
+                        node(Pid) == Node;
                    (_) -> false
                 end, LogZList);
         _ -> 
