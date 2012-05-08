@@ -41,12 +41,18 @@ init({_Any, http}, Req, []) ->
 	{ok, Req, undefined}.
 
 handle(Req, State) ->
-    case cowboy_http_req:qs_val(<<"slice">>, Req) of
-        {undefined,_}   -> Options=[];
-        {Val,_}         -> Options=[list_to_atom(binary_to_list(Val))]
-    end,
-    case cowboy_http_req:qs_val(<<"int">>, Req) of
-        {undefined,_}            -> Timestamp={{0,0,0},{0,0,0},0};
+    Options = 
+        case cowboy_http_req:qs_val(<<"node">>, Req) of
+            {undefined,_}   -> [];
+            {Val,_}         -> [{node, list_to_atom(binary_to_list(Val))}]
+        end ++
+            case cowboy_http_req:qs_val(<<"severity">>, Req) of
+                {undefined,_}   -> [];
+                {Val,_}         -> [list_to_atom(binary_to_list(Val))]
+            end,
+    case cowboy_http_req:qs_val(<<"interval">>, Req) of
+        {undefined,_}            -> Timestamp= logmachine_util:millis_to_now(
+                                                 logmachine_util:now_to_millis(now()) - 1800*1000);
         {<<Y:4/binary,_,
            M:2/binary,_,
            D:2/binary,_,
@@ -57,7 +63,7 @@ handle(Req, State) ->
             Timestamp = {{to_int(Y),to_int(M),to_int(D)},
                          {to_int(H),to_int(Mn),to_int(S)}, to_int(Mls)}
     end,
-    ZList=logmachine_recorder_srv:get_history(error_logger, Timestamp),
+    ZList=logmachine:get_zlist(error_logger, Timestamp),
 	Headers = [{'Content-Type', <<"text/plain">>}],
 	{ok, Req2} = cowboy_http_req:chunked_reply(200, Headers, Req),
     error_log_tool:print_zlist(
