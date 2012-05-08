@@ -49,6 +49,10 @@ handle(Req, State) ->
             case cowboy_http_req:qs_val(<<"severity">>, Req) of
                 {undefined,_}   -> [];
                 {Val,_}         -> [list_to_atom(binary_to_list(Val))]
+            end ++
+            case cowboy_http_req:qs_val(<<"limit">>, Req) of
+                {undefined,_}   -> [];
+                {Val,_}         -> [{limit, list_to_integer(binary_to_list(Val))}]
             end,
     case cowboy_http_req:qs_val(<<"interval">>, Req) of
         {undefined,_}            -> Timestamp= logmachine_util:millis_to_now(

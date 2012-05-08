@@ -37,15 +37,19 @@ print_log(Options, PrintFun, LogFilename) when is_function(PrintFun, 1) ->
 
 print_zlist(Options, PrintFun, LogZList) when is_function(PrintFun, 1) ->
     LogZList1=filter(Options, 
-            zlists:ziph(zlists:seq(1, 1000000000000, 1), 
-            LogZList)),
-        LogZList2=zlists:map(
-            fun({_N,{NTime,Evt}})->
-                {_N,{calendar:now_to_universal_time(NTime),Evt}}
-            end, LogZList1),
-              zlists:foreach(
-                fun(E) -> print_evt(PrintFun,E) end,
-                LogZList2 ).
+                     zlists:ziph(zlists:seq(1, 1000000000000, 1), 
+                                 LogZList)),
+    LogZList2=zlists:map(
+                fun({_N,{NTime,Evt}})->
+                        {_N,{calendar:now_to_universal_time(NTime),Evt}}
+                end, LogZList1),
+    case lists:keyfind(limit, 1, Options) of
+        {limit, Limit} -> LogZList3=zlists:take2(Limit, LogZList2);
+        false          -> LogZList3=LogZList2
+    end,
+    zlists:foreach(
+      fun(E) -> print_evt(PrintFun,E) end,
+      LogZList3 ).
 
 print_evt(PrintFun, {N, TaggedEvt}) ->
     PrintFun(io_lib:format(?REPORT_SEPARATOR, [N])),
@@ -96,7 +100,9 @@ filter([Opt|Tail]=_Options,LogZList) ->
                 fun({_N,{_, {_, Node1, {_, _, _}} }})->
                         Node1 == Node;
                    (_) -> false
-                end, LogZList)
+                end, LogZList);
+        _ -> 
+            Z=LogZList
     end,
     filter(Tail,Z).
 
