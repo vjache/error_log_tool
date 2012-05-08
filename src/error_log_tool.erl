@@ -90,6 +90,12 @@ filter([Opt|Tail]=_Options,LogZList) ->
                 fun({_N,{_, {Type, _, {_, _, _}} }})->
                         lists:member(Type, [error,error_report,warning_report,warning_msg]);
                    (_) -> false
+                end, LogZList);
+        {node, Node} ->
+            Z=zlists:filter(
+                fun({_N,{_, {_, Node1, {_, _, _}} }})->
+                        Node1 == Node;
+                   (_) -> false
                 end, LogZList)
     end,
     filter(Tail,Z).
