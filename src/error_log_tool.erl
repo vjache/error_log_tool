@@ -71,6 +71,8 @@ filter([]=_Options,LogZList) ->
     LogZList;
 filter([Opt|Tail]=_Options,LogZList) ->
     case Opt of
+        'all'  ->
+            Z=LogZList;
         'sasl' ->
             Z=zlists:filter(
                 fun({_N,{_, {_, _, {_, Type, _}} }})->
@@ -95,10 +97,18 @@ filter([Opt|Tail]=_Options,LogZList) ->
                         lists:member(Type, [error,error_report,warning_report,warning_msg]);
                    (_) -> false
                 end, LogZList);
-        {node, Node} ->
+        {nodes_inc, 'all'} ->
+            Z=LogZList;
+        {nodes_inc, Nodes} when is_list(Nodes) ->
             Z=zlists:filter(
                 fun({_N,{_, {_, Pid, {_, _, _}} }})->
-                        node(Pid) == Node;
+                        lists:member(node(Pid), Nodes);
+                   (_) -> false
+                end, LogZList);
+        {nodes_exc, Nodes} when is_list(Nodes) ->
+            Z=zlists:filter(
+                fun({_N,{_, {_, Pid, {_, _, _}} }})->
+                        not lists:member(node(Pid), Nodes);
                    (_) -> false
                 end, LogZList);
         _ -> 

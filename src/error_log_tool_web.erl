@@ -35,38 +35,27 @@
 %% API Functions
 %%
 
+-record(state, {interval,nodes_inc,nodes_exc,severity,max_limit,min_limit}).
+
 -define(ECHO(Msg), io:format(standard_error, "~p: ~p~n", [?LINE, Msg])).
 
 init({_Any, http}, Req, []) ->
-	{ok, Req, undefined}.
+    State=#state{
+                 interval  = parse_interval(qs_val(Req, <<"interval">>, <<>>)),
+                 nodes_inc = parse_nodes(   qs_val(Req, <<"nodes">>,    <<>>)),
+                 nodes_exc = parse_nodes(   qs_val(Req, <<"nodes_exc">>,<<>>)),
+                 severity  = parse_severity(qs_val(Req, <<"severity">>, <<>>)),
+                 max_limit = parse_integer( qs_val(Req, <<"limit">>, <<"10000">>)),
+                 min_limit = parse_integer( qs_val(Req, <<"limit_min">>, <<"0">>))
+                 },
+	{ok, Req, State}.
 
-handle(Req, State) ->
-    Options = 
-        case cowboy_http_req:qs_val(<<"node">>, Req) of
-            {undefined,_}   -> [];
-            {Val,_}         -> [{node, list_to_atom(binary_to_list(Val))}]
-        end ++
-            case cowboy_http_req:qs_val(<<"severity">>, Req) of
-                {undefined,_}   -> [];
-                {Val,_}         -> [list_to_atom(binary_to_list(Val))]
-            end ++
-            case cowboy_http_req:qs_val(<<"limit">>, Req) of
-                {undefined,_}   -> [];
-                {Val,_}         -> [{limit, list_to_integer(binary_to_list(Val))}]
-            end,
-    case cowboy_http_req:qs_val(<<"interval">>, Req) of
-        {undefined,_}            -> Timestamp= logmachine_util:millis_to_now(
-                                                 logmachine_util:now_to_millis(now()) - 1800*1000);
-        {<<Y:4/binary,_,
-           M:2/binary,_,
-           D:2/binary,_,
-           H:2/binary,_,
-           Mn:2/binary,_,
-           S:2/binary,".",
-           Mls:3/binary,"Z">>,_} -> 
-            Timestamp = {{to_int(Y),to_int(M),to_int(D)},
-                         {to_int(H),to_int(Mn),to_int(S)}, to_int(Mls)}
-    end,
+handle(Req, #state{interval=Timestamp,nodes_inc=NodesInc,nodes_exc=NodesExc,max_limit=LimitMax,min_limit=LimitMin,severity=Severity}=State) ->
+    Options = [{nodes_exc, NodesExc},
+               {nodes_inc, NodesInc},
+               {max_limit, LimitMax},
+               {min_limit, LimitMin},
+               Severity ],
     ZList=logmachine:get_zlist(error_logger, Timestamp),
 	Headers = [{'Content-Type', <<"text/plain">>}],
 	{ok, Req2} = cowboy_http_req:chunked_reply(200, Headers, Req),
@@ -84,9 +73,34 @@ terminate(_Req, _State) ->
 
 %%
 %% Local Functions
-%% %%
-%% 
-%% id() ->
-%% 	{Mega, Sec, Micro} = erlang:now(),
-%% 	Id = (Mega * 1000000 + Sec) * 1000000 + Micro,
-%% 	integer_to_list(Id, 16).
+%%
+
+qs_val(Req, Name, Default) ->
+    case cowboy_http_req:qs_val(Name, Req) of
+        {undefined,_} when is_function(Default,0)   -> Default();
+        {undefined,_}   -> Default;
+        {Val,_}         -> Val
+    end.
+
+parse_interval(<<>>) ->
+    logmachine_util:now_add(now(), -1800*1000*1000);
+parse_interval(<<Y:4/binary,_,
+                 M:2/binary,_,
+                 D:2/binary,_,
+                 H:2/binary,_,
+                 Mn:2/binary,_,
+                 S:2/binary,".",
+                 Mls:3/binary,"Z">>) ->
+    {{to_int(Y),to_int(M),to_int(D)},
+     {to_int(H),to_int(Mn),to_int(S)}, to_int(Mls)}.
+
+parse_nodes(NodesBStr) ->
+    [ binary_to_existing_atom(B, latin1) || B <- binary:split(NodesBStr, <<",">>, [global,trim])].
+
+parse_severity(<<>>) ->
+    all;
+parse_severity(BSeverity) ->
+    binary_to_existing_atom(BSeverity, latin1).
+
+parse_integer(BInt) ->
+    list_to_integer(binary_to_list(BInt)).
