@@ -39,7 +39,7 @@ init({_Any, http}, Req, []) ->
     {ok, Req, undefined}.
 
 handle(Req, State) ->
-    {ok, Req2} = cowboy_http_req:reply(200, [], help_page(), Req),
+    {ok, Req2} = cowboy_http_req:reply(200, [{'Content-Type', <<"text/plain">>}], help_page(), Req),
     {ok, Req2, State}.
 
 %%
