@@ -52,7 +52,7 @@ init({_Any, http}, Req, []) ->
 
 handle(Req, #state{interval=Timestamp,nodes_inc=NodesInc,nodes_exc=NodesExc,max_limit=LimitMax,min_limit=LimitMin,severity=Severity}=State) ->
     Options = [{nodes_exc, NodesExc},
-               {nodes_inc, NodesInc},
+               {nodes_inc, case NodesInc of [] -> all; _ -> NodesInc end},
                {max_limit, LimitMax},
                {min_limit, LimitMin},
                Severity ],
@@ -95,12 +95,18 @@ parse_interval(<<Y:4/binary,_,
      {to_int(H),to_int(Mn),to_int(S)}, to_int(Mls)}.
 
 parse_nodes(NodesBStr) ->
-    [ binary_to_existing_atom(B, latin1) || B <- binary:split(NodesBStr, <<",">>, [global,trim])].
+    [ try binary_to_existing_atom(B, latin1)
+      catch
+          _:badarg -> undefined
+      end || B <- binary:split(NodesBStr, <<",">>, [global,trim])].
 
 parse_severity(<<>>) ->
     all;
 parse_severity(BSeverity) ->
-    binary_to_existing_atom(BSeverity, latin1).
+    try binary_to_existing_atom(BSeverity, latin1)
+    catch
+        _:badarg -> all
+    end.
 
 parse_integer(BInt) ->
     list_to_integer(binary_to_list(BInt)).

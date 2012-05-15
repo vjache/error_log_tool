@@ -42,6 +42,9 @@ handle(Req, State) ->
     {ok, Req2} = cowboy_http_req:reply(200, [{'Content-Type', <<"text/plain">>}], help_page(), Req),
     {ok, Req2, State}.
 
+terminate(_Req, _State) ->
+    ok.
+
 %%
 %% Local Functions
 %%

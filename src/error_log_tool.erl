@@ -43,8 +43,8 @@ print_zlist(Options, PrintFun, LogZList) when is_function(PrintFun, 1) ->
                 fun({_N,{NTime,Evt}})->
                         {_N,{calendar:now_to_universal_time(NTime),Evt}}
                 end, LogZList1),
-    case lists:keyfind(limit, 1, Options) of
-        {limit, Limit} -> LogZList3=zlists:take2(Limit, LogZList2);
+    case lists:keyfind(max_limit, 1, Options) of
+        {max_limit, Limit} -> LogZList3=zlists:take2(Limit, LogZList2);
         false          -> LogZList3=LogZList2
     end,
     zlists:foreach(
