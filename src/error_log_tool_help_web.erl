@@ -29,7 +29,7 @@
 %%
 %% Exported Functions
 %%
--export([init/3,handle/2]).
+-export([init/3,handle/2,terminate/2]).
 
 %%
 %% API Functions

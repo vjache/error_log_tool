@@ -1,7 +1,7 @@
 %% -*- mode: erlang; -*-
 {application, error_log_tool,
  [{description, "An Error Log Tool"},
-  {vsn, "0.2.1"},
+  {vsn, "0.2.2"},
   {registered, []},
   {build_dependencies, []},
   {env, []},
